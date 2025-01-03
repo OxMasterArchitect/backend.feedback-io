@@ -21,6 +21,6 @@ func main() {
 
 	routes.Setups(app)
 
-	log.Fatal(app.Listen(":8000"))
+	log.Fatal(app.Listen(":80"))
 
 }
