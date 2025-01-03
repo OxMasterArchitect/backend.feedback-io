@@ -3,7 +3,6 @@ package config
 import (
 	"log"
 
-	seeder "feedback-io.backend/database"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
@@ -23,8 +22,8 @@ func ConnectDatabase() {
 
 	}
 
-	AutoMigrateDB(db_conn)
-	seeder.Seed(db_conn)
+	// AutoMigrateDB(db_conn)
+	// seeder.Seed(db_conn)
 
 	DB = db_conn
 
