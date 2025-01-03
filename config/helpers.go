@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"feedback-io.backend/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -52,5 +53,18 @@ func ConnectDB() (*gorm.DB, error) {
 
 	log.Printf("Connected to [%s] at -> %s:%s", db_config.Name, db_config.Host, db_config.Port)
 	return db_conn, nil
+
+}
+
+func AutoMigrateDB(DB *gorm.DB) {
+	err := DB.Debug().AutoMigrate(
+		&models.Suggestion{},
+		&models.Comment{},
+		&models.Reply{},
+		&models.User{},
+	)
+	if err != nil {
+		log.Fatalf("Error occured migrating database: %v", err)
+	}
 
 }
