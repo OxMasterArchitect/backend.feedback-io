@@ -2,8 +2,6 @@ module feedback-io.backend
 
 go 1.23.4
 
-require github.com/gofiber/fiber/v3 v3.0.0-beta.4
-
 require (
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect

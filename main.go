@@ -4,6 +4,7 @@ import (
 	"log"
 
 	database "feedback-io.backend/config"
+	"feedback-io.backend/routes"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,6 +18,8 @@ func main() {
 	})
 
 	database.ConnectDatabase()
+
+	routes.Setups(app)
 
 	log.Fatal(app.Listen(":8000"))
 
