@@ -27,11 +27,26 @@ func GetSuggestions(c *fiber.Ctx) error {
 	}
 
 	// Get all suggestions
-	sql.DB.Limit(limit).Offset(offset).Find(&suggestions).Count(&count)
+	// sql.DB.Model(&models.Suggestion{}).Limit(limit).Offset(offset).Find(&suggestions).Count(&count)
+	// First get the total count
+	if err := sql.DB.Model(&suggestions).Count(&count).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to fetch suggestions count",
+		})
+	}
+
+	// Then get the paginated results
+	if err := sql.DB.Limit(limit).Offset(offset).Find(&suggestions).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to fetch suggestions",
+		})
+	}
 	return c.Status(200).JSON(fiber.Map{
 		"success": true,
-		"count":   &count,
-		"data":    &suggestions,
+		"count":   count,
+		"data":    suggestions,
 	})
 }
 
@@ -70,8 +85,8 @@ func VoteSuggestion(c *fiber.Ctx) error {
 		})
 	}
 
-	mode := c.Query("mode", "up")
-	if mode != "up" && mode != "down" {
+	vote := c.Query("vote", "up")
+	if vote != "up" && vote != "down" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
 			"error":   "Invalid vote parameter: must be 'up' or 'down'",
@@ -80,6 +95,19 @@ func VoteSuggestion(c *fiber.Ctx) error {
 
 	// Start transaction
 	tx := sql.DB.Begin()
+	committed := false
+
+	defer func() {
+		if r := recover(); r != nil {
+			if !committed {
+				tx.Rollback()
+			}
+			panic(r)
+		} else if tx.Error != nil && !committed {
+			tx.Rollback()
+		}
+	}()
+
 	if tx.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
@@ -104,15 +132,14 @@ func VoteSuggestion(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update votes using SQL to prevent race conditions
-	updateQuery := "UPDATE suggestions SET votes = votes + ? WHERE id = ?"
 	voteChange := 1
-	if mode == "down" {
+	if vote == "down" {
 		voteChange = -1
 	}
 
-	if err := tx.Exec(updateQuery, voteChange, id).Error; err != nil {
-		tx.Rollback()
+	if err := tx.Model(&suggestion).
+		Where("id = ?", id).
+		Update("votes", gorm.Expr("votes + ?", voteChange)).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   "Failed to update votes",
@@ -134,7 +161,7 @@ func VoteSuggestion(c *fiber.Ctx) error {
 			"error":   "Failed to fetch updated suggestion",
 		})
 	}
-
+	committed = true
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"success": true,
 		"data":    suggestion,
