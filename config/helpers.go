@@ -62,6 +62,7 @@ func AutoMigrateDB(DB *gorm.DB) {
 		&models.Comment{},
 		&models.Reply{},
 		&models.User{},
+		&models.Category{},
 	)
 	if err != nil {
 		log.Fatalf("Error occured migrating database: %v", err)

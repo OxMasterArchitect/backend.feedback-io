@@ -36,9 +36,26 @@ func GetSuggestions(c *fiber.Ctx) error {
 		})
 	}
 
+	category, err := strconv.Atoi(c.Query("category", "0"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   "Invalid category ID format",
+		})
+	}
+
+	query := sql.DB
+	if category != 0 {
+		query = query.Where("category_id = ?", category)
+	}
+
 	// Then get the paginated results
-	if err := sql.DB.Limit(limit).Offset(offset).Find(&suggestions).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{
+	if err := query.
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&suggestions).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
 			"error":   "Failed to fetch suggestions",
 		})
@@ -51,28 +68,32 @@ func GetSuggestions(c *fiber.Ctx) error {
 }
 
 func GetSuggestion(c *fiber.Ctx) error {
+
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   "Invalid suggestion ID",
+			"error":   "Invalid suggestion ID format",
 		})
 	}
 
 	var suggestion models.Suggestion
-	// sql.DB.Preload("comments").First(&suggestion, id)
-	sql.DB.Where("id = ?", id).Preload("comments").First(&suggestion)
-
-	if suggestion.Id == 0 {
-		return c.Status(404).JSON(fiber.Map{
+	if err := sql.DB.First(&suggestion, &id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"success": false,
+				"error":   "Suggestion not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"error":   "Suggestion not found",
+			"error":   "Failed to fetch suggestion",
 		})
 	}
 
-	return c.Status(200).JSON(fiber.Map{
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"success": true,
-		"data":    &suggestion,
+		"data":    suggestion,
 	})
 }
 
