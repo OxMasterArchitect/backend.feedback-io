@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -10,8 +12,8 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
-
-	err := godotenv.Load()
+	pwd, _ := os.Getwd()
+	err := godotenv.Load(filepath.Join(pwd, ".env"))
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
