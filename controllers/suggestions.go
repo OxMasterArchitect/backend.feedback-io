@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	sql "feedback-io.backend/config"
 	"feedback-io.backend/models"
@@ -13,6 +14,7 @@ import (
 )
 
 func GetSuggestions(c *fiber.Ctx) error {
+
 	var suggestions []models.Suggestion
 
 	offset, err_offset := strconv.Atoi(c.Query("offset", "0"))
@@ -187,4 +189,104 @@ func VoteSuggestion(c *fiber.Ctx) error {
 		"success": true,
 		"data":    suggestion,
 	})
+}
+
+func CreateSuggestion(c *fiber.Ctx) error {
+	type CreateSuggestionInput struct {
+		Title      string `json:"title"`
+		Content    string `json:"content"`
+		CategoryId uint   `json:"category_id"`
+		UserId     uint   `json:"user_id"`
+	}
+
+	var input CreateSuggestionInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to parse request body",
+		})
+	}
+
+	suggestion := models.Suggestion{
+		Title:      input.Title,
+		Content:    input.Content,
+		CategoryId: input.CategoryId,
+		UserId:     input.UserId,
+		Status:     "suggestion",
+	}
+
+	if err := sql.DB.Create(&suggestion).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to create suggestion",
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"success": true,
+		"data":    suggestion,
+	})
+}
+
+func DeleteSuggestion(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   "Invalid suggestion ID",
+		})
+	}
+
+	tx := sql.DB.Begin()
+
+	var suggestions models.Suggestion // before we delete suggestion, we need to delete Replies, Comments, and then Suggestion
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		} else if tx.Error != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.First(&suggestions, id).Error; err != nil {
+
+		tx.Rollback()
+		return err
+	}
+
+	// delete all replies
+	if suggestions.Comments != nil {
+		for _, comment := range *suggestions.Comments {
+			if err := tx.Model(&models.Reply{}).Where("comment_id = ?", comment.Id).Update("deleted_at", time.Now()).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	if err := tx.Model(&models.Comment{}).Where("suggestion_id = ?", id).Update("deleted_at", time.Now()).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(&models.Suggestion{}).Where("id = ?", id).Update("deleted_at", time.Now()).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to commit transaction",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Suggestion deleted successfully",
+		"data":    suggestions,
+	})
+
 }
