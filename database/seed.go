@@ -30,7 +30,7 @@ func Seed(db *gorm.DB) error {
 	// Create comments
 	comments, err := createComments(db, users, suggestions)
 	if err != nil {
-		return fmt.Errorf("error creating comments: %v", err)
+		return fmt.Errorf("error creating comments : %v", err)
 	}
 
 	// Create replies
@@ -42,6 +42,12 @@ func Seed(db *gorm.DB) error {
 	if _, err := createCategories(db); err != nil {
 		return fmt.Errorf("error creating categories: %v", err)
 	}
+
+	if err := createStatuses(db, users); err != nil {
+		return fmt.Errorf("error creating statuses: %v", err)
+	}
+
+	
 
 	fmt.Println("Database seeded successfully!")
 	return nil
@@ -243,6 +249,41 @@ func createReplies(db *gorm.DB, users []models.User, comments []models.Comment) 
 	}
 
 	return nil
+}
+
+func createStatuses(db *gorm.DB, users []models.User) ( error) {
+
+	statuses := []models.Status{
+		{
+			Name:        "Suggestion",
+			Description: "Feedback is a suggestion",
+			UserId:      users[0].Id,
+		},
+		{
+			Name:        "Planned",
+			Description: "Feedback has been planned",
+			UserId:      users[1].Id,
+		},
+		{
+			Name:        "In-Progress",
+			Description: "Feedback is in progress",
+			UserId:      users[0].Id,
+		},
+		{
+			Name:        "Live",
+			Description: "Feedback is live",
+			UserId:      users[0].Id,
+		},
+	}
+
+	for i := range statuses {
+		if err := db.Create(&statuses[i]).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+
 }
 
 func hashPassword(password string) string {

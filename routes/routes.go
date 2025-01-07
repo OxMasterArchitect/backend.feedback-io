@@ -13,6 +13,7 @@ func Setups(app *fiber.App) {
 	app.Put("/suggestions/:id<int>/vote", controllers.VoteSuggestion)
 
 	app.Post("/suggestions", controllers.CreateSuggestion)
+	app.Put("/suggestions/:id<int>", controllers.UpdateSuggestion)
 	app.Delete("/suggestions/:id", controllers.DeleteSuggestion)
 
 }

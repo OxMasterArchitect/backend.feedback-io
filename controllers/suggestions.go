@@ -290,3 +290,47 @@ func DeleteSuggestion(c *fiber.Ctx) error {
 	})
 
 }
+
+func UpdateSuggestion(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   "Invalid suggestion ID",
+		})
+	}
+
+	// define struct for incoming data
+	// read data from request body
+	
+	type IncomingStruct struct {
+		Title string `json:"title"`
+		Content string `json:"content"`
+		CategoryId uint `json:"category_id"`
+		StatusId uint `json:"status_id"`
+	}
+
+	var dataType IncomingStruct
+	var suggestion models.Suggestion
+
+
+	if err := c.BodyParser(&dataType).Error	; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error": "Invalid Data Provided",
+		})
+	}
+
+	if err := sql.DB.First(&suggestion, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"error": "Suggestion not found",
+		})
+	}
+
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
+		"success": false,
+		"message": "Suggestion updated successfully",
+		"data": suggestion,
+	})
+}
