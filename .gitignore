@@ -1,1 +1,5 @@
 .env
+.bin/
+database/seed.go
+tmp/
+database/seed.go

@@ -38,6 +38,11 @@ func Seed(db *gorm.DB) error {
 		return fmt.Errorf("error creating replies: %v", err)
 	}
 
+	// Create categories
+	if _, err := createCategories(db); err != nil {
+		return fmt.Errorf("error creating categories: %v", err)
+	}
+
 	fmt.Println("Database seeded successfully!")
 	return nil
 }
@@ -58,6 +63,9 @@ func cleanDatabase(db *gorm.DB) error {
 		return err
 	}
 	if err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.User{}).Error; err != nil {
+		return err
+	}
+	if err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Category{}).Error; err != nil {
 		return err
 	}
 
@@ -105,28 +113,28 @@ func createUsers(db *gorm.DB) ([]models.User, error) {
 func createSuggestions(db *gorm.DB, users []models.User) ([]models.Suggestion, error) {
 	suggestions := []models.Suggestion{
 		{
-			Title:    "Improve Website Performance",
-			Content:  "We should optimize our website loading times by implementing caching and reducing image sizes.",
-			Votes:    5,
-			Status:   "in-progress",
-			Category: "performance",
-			UserId:   users[0].Id,
+			Title:      "Improve Website Performance",
+			Content:    "We should optimize our website loading times by implementing caching and reducing image sizes.",
+			Votes:      5,
+			Status:     "in-progress",
+			CategoryId: 0,
+			UserId:     users[0].Id,
 		},
 		{
-			Title:    "Add Dark Mode",
-			Content:  "Implement a dark mode theme for better user experience during night time usage.",
-			Votes:    10,
-			Status:   "in-progress",
-			Category: "ui",
-			UserId:   users[1].Id,
+			Title:      "Add Dark Mode",
+			Content:    "Implement a dark mode theme for better user experience during night time usage.",
+			Votes:      10,
+			Status:     "in-progress",
+			CategoryId: 1,
+			UserId:     users[1].Id,
 		},
 		{
-			Title:    "Mobile App Development",
-			Content:  "We should create a mobile app version of our platform for better accessibility.",
-			Votes:    8,
-			Status:   "in-progress",
-			Category: "feature",
-			UserId:   users[2].Id,
+			Title:      "Mobile App Development",
+			Content:    "We should create a mobile app version of our platform for better accessibility.",
+			Votes:      8,
+			Status:     "in-progress",
+			CategoryId: 2,
+			UserId:     users[2].Id,
 		},
 	}
 
@@ -137,6 +145,48 @@ func createSuggestions(db *gorm.DB, users []models.User) ([]models.Suggestion, e
 	}
 
 	return suggestions, nil
+}
+func createCategories(db *gorm.DB) ([]models.Category, error) {
+	categories := []models.Category{
+		{
+			Name: "Performance",
+		},
+		{
+			Name: "Design",
+		},
+		{
+			Name: "Feature",
+		},
+		{
+			Name: "Bug",
+		},
+		{
+			Name: "Enhancement",
+		},
+		{
+			Name: "UI",
+		},
+		{
+			Name: "UX",
+		},
+		{
+			Name: "Security",
+		},
+		{
+			Name: "Accessibility",
+		},
+		{
+			Name: "Other",
+		},
+	}
+
+	for i := range categories {
+		if err := db.Create(&categories[i]).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	return categories, nil
 }
 
 func createComments(db *gorm.DB, users []models.User, suggestions []models.Suggestion) ([]models.Comment, error) {
