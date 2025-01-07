@@ -302,35 +302,62 @@ func UpdateSuggestion(c *fiber.Ctx) error {
 
 	// define struct for incoming data
 	// read data from request body
-	
-	type IncomingStruct struct {
-		Title string `json:"title"`
-		Content string `json:"content"`
-		CategoryId uint `json:"category_id"`
-		StatusId uint `json:"status_id"`
+
+	type PathInput struct {
+		Title      *string `json:"title"`
+		Content    *string `json:"content"`
+		CategoryId *uint   `json:"category_id"`
+		StatusId   *uint   `json:"status_id"`
 	}
 
-	var dataType IncomingStruct
+	var body PathInput
 	var suggestion models.Suggestion
 
-
-	if err := c.BodyParser(&dataType).Error	; err != nil {
+	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error": "Invalid Data Provided",
+			"error":   "Invalid Data Provided",
+		})
+	}
+
+	if err := sql.DB.First(&models.Suggestion{}, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"error":   "Suggestion not found",
+		})
+	}
+
+	updates := make(map[string]interface{})
+	if body.Title != nil {
+		updates["title"] = body.Title
+	}
+	if body.Content != nil {
+		updates["content"] = body.Content
+	}
+	if body.CategoryId != nil {
+		updates["category_id"] = body.CategoryId
+	}
+	if body.StatusId != nil {
+		updates["status_id"] = body.StatusId
+	}
+
+	if err := sql.DB.Model(&models.Suggestion{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to update suggestion",
 		})
 	}
 
 	if err := sql.DB.First(&suggestion, id).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"error": "Suggestion not found",
+			"error":   "Failed to fetch updated suggestion",
 		})
 	}
 
 	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"success": false,
 		"message": "Suggestion updated successfully",
-		"data": suggestion,
+		"data":    suggestion,
 	})
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	seeder "feedback-io.backend/database"
+	// seeder "feedback-io.backend/database"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
@@ -26,9 +26,8 @@ func ConnectDatabase() {
 	}
 
 	DB = db_conn
-	AutoMigrateDB(DB)
-	seeder.Seed(DB)
-
+	// AutoMigrateDB(DB)
+	// seeder.Seed(DB)
 
 	// defer func() {
 	// 	db, err := DB.DB()
