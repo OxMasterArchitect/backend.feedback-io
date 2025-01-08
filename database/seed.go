@@ -122,25 +122,25 @@ func createSuggestions(db *gorm.DB, users []models.User) ([]models.Suggestion, e
 			Title:      "Improve Website Performance",
 			Content:    "We should optimize our website loading times by implementing caching and reducing image sizes.",
 			Votes:      5,
-			Status:     "in-progress",
 			CategoryId: 0,
 			UserId:     users[0].Id,
+			StatusId: 3,
 		},
 		{
 			Title:      "Add Dark Mode",
 			Content:    "Implement a dark mode theme for better user experience during night time usage.",
 			Votes:      10,
-			Status:     "in-progress",
 			CategoryId: 1,
 			UserId:     users[1].Id,
+			StatusId: 3,
 		},
 		{
 			Title:      "Mobile App Development",
 			Content:    "We should create a mobile app version of our platform for better accessibility.",
 			Votes:      8,
-			Status:     "in-progress",
 			CategoryId: 2,
 			UserId:     users[2].Id,
+			StatusId: 3,
 		},
 	}
 
@@ -156,6 +156,7 @@ func createCategories(db *gorm.DB) ([]models.Category, error) {
 	categories := []models.Category{
 		{
 			Name: "Performance",
+			Description: "",
 		},
 		{
 			Name: "Design",

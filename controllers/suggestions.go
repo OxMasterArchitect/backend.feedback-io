@@ -14,27 +14,16 @@ import (
 )
 
 func GetSuggestions(c *fiber.Ctx) error {
-
 	var suggestions []models.Suggestion
+	var count int64
 
 	offset, err_offset := strconv.Atoi(c.Query("offset", "0"))
 	limit, err_limit := strconv.Atoi(c.Query("limit", "10"))
-	var count int64
 
 	if err_offset != nil || err_limit != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"success": false,
 			"error":   "Invalid offset parameter or limit parameter",
-		})
-	}
-
-	// Get all suggestions
-	// sql.DB.Model(&models.Suggestion{}).Limit(limit).Offset(offset).Find(&suggestions).Count(&count)
-	// First get the total count
-	if err := sql.DB.Model(&suggestions).Count(&count).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"success": false,
-			"error":   "Failed to fetch suggestions count",
 		})
 	}
 
@@ -46,26 +35,41 @@ func GetSuggestions(c *fiber.Ctx) error {
 		})
 	}
 
-	query := sql.DB
+	status := c.Query("status", "")
+
+	// Build base query
+	query := sql.DB.Model(&suggestions)
+
+	// Apply filters
 	if category != 0 {
 		query = query.Where("category_id = ?", category)
 	}
+	if status != "" {
+		query = query.Where("status_id = ?", status)
+	}
 
-	// Then get the paginated results
-	if err := query.
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&suggestions).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// Get filtered count
+	if err := query.Count(&count).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"success": false,
+			"error":   "Failed to fetch suggestions count",
+		})
+	}
+
+	// Get filtered and paginated results
+	if err := query.Limit(limit).Offset(offset).Find(&suggestions).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
 			"success": false,
 			"error":   "Failed to fetch suggestions",
 		})
 	}
-	return c.Status(200).JSON(fiber.Map{
+
+	// fetch the comments
+
+	return c.JSON(fiber.Map{
 		"success": true,
-		"count":   count,
 		"data":    suggestions,
+		"count":   count,
 	})
 }
 
@@ -212,7 +216,7 @@ func CreateSuggestion(c *fiber.Ctx) error {
 		Content:    input.Content,
 		CategoryId: input.CategoryId,
 		UserId:     input.UserId,
-		Status:     "suggestion",
+		StatusId:   0,
 	}
 
 	if err := sql.DB.Create(&suggestion).Error; err != nil {
@@ -256,9 +260,17 @@ func DeleteSuggestion(c *fiber.Ctx) error {
 		return err
 	}
 
+	// we need to fetch comments
+	var comments []models.Comment
+
+	if err := sql.DB.Model(&models.Comment{}).First(&comments, suggestions.Id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	// delete all replies
-	if suggestions.Comments != nil {
-		for _, comment := range *suggestions.Comments {
+	if len(comments) > 0 {
+		for _, comment := range comments {
 			if err := tx.Model(&models.Reply{}).Where("comment_id = ?", comment.Id).Update("deleted_at", time.Now()).Error; err != nil {
 				tx.Rollback()
 				return err
@@ -299,9 +311,6 @@ func UpdateSuggestion(c *fiber.Ctx) error {
 			"error":   "Invalid suggestion ID",
 		})
 	}
-
-	// define struct for incoming data
-	// read data from request body
 
 	type PathInput struct {
 		Title      *string `json:"title"`

@@ -40,49 +40,46 @@ func (t DateTime) Value() (driver.Value, error) {
 }
 
 type Suggestion struct {
-	Id         uint       `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
-	Title      string     `json:"title" gorm:"column:title;type:varchar(255);not null"`
-	Content    string     `json:"content" gorm:"column:content;type:text;not null"`
-	Votes      int        `json:"votes" gorm:"column:votes;default:0"`
-	Comments   *[]Comment `json:"comments" gorm:"foreignKey:SuggestionId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Status     string     `json:"status" gorm:"column:status;type:varchar(20);not null"`
-	CategoryId uint       `json:"category_id" gorm:"column:category_id;type:INT(10) UNSIGNED NOT NULL;index"`
-	StatusId uint `json:"status_id" gorm:"column:status_id;type:int(10) unsigned not null;index"`
-	UserId     uint       `json:"user_id" gorm:"column:user_id;type:INT(10) UNSIGNED NOT NULL;index"`
-
-	// User      User      `json:"user" gorm:"foreignKey:UserId;references:Id"` we can use user_id to get user so we don't need to load user data
-	CreatedAt DateTime       `json:"created_at" gorm:"column:created_at;type:DATETIME"`
-	UpdatedAt DateTime       `json:"updated_at" gorm:"column:updated_at;type:DATETIME"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
+	Id         uint           `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
+	Title      string         `json:"title" gorm:"column:title;type:varchar(255);not null"`
+	Content    string         `json:"content" gorm:"column:content;type:text;not null"`
+	Votes      int            `json:"votes" gorm:"column:votes;default:0"`
+	Comments   uint           `json:"comments_count" gorm:"int(10) unsigned not null;default:0"`
+	CategoryId uint           `json:"category_id" gorm:"column:category_id;type:INT(10) UNSIGNED NOT NULL;index"`
+	StatusId   uint           `json:"status_id" gorm:"column:status_id;type:int(10) unsigned not null;index"`
+	UserId     uint           `json:"user_id" gorm:"column:user_id;type:INT(10) UNSIGNED NOT NULL;index"`
+	CreatedAt  DateTime       `json:"created_at" gorm:"column:created_at;type:DATETIME"`
+	UpdatedAt  DateTime       `json:"updated_at" gorm:"column:updated_at;type:DATETIME"`
+	DeletedAt  gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
 }
 
 type Comment struct {
-	Id           uint           `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
-	Content      string         `json:"content" gorm:"column:content;type:text;not null"`
-	UserId       uint           `json:"user_id" gorm:"column:user_id;type:INT(10) UNSIGNED NOT NULL;index"`
-	User         User           `json:"user" gorm:"foreignKey:UserId;references:Id"`
-	SuggestionId uint           `json:"suggestion_id" gorm:"column:suggestion_id;type:INT(10) UNSIGNED NOT NULL;index"`
-	Suggestion   *Suggestion    `json:"suggestion" gorm:"foreignKey:SuggestionId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Replies      *[]Reply       `json:"replies" gorm:"foreignKey:CommentId;references:Id"`
-	CreatedAt    DateTime       `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt    DateTime       `json:"updated_at" gorm:"column:updated_at"`
-	DeletedAt    gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
+	Id           uint        `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
+	Content      string      `json:"content" gorm:"column:content;type:text;not null"`
+	UserId       uint        `json:"user_id" gorm:"column:user_id;type:INT(10) UNSIGNED NOT NULL;index"`
+	User         User        `json:"user" gorm:"foreignKey:UserId;references:Id"`
+	SuggestionId uint        `json:"suggestion_id" gorm:"column:suggestion_id;type:INT(10) UNSIGNED NOT NULL;index"`
+	Suggestion   *Suggestion `json:"suggestion" gorm:"foreignKey:SuggestionId;references:Id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	// Replies      *[]Reply       `json:"replies" gorm:"foreignKey:CommentId;references:Id"`
+	CreatedAt DateTime       `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt DateTime       `json:"updated_at" gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
 }
 
 type User struct {
-	Id          uint           `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
-	Username    string         `json:"username" gorm:"column:username;type:varchar(255);uniqueIndex;not null"`
-	FirstName   string         `json:"firstName" gorm:"column:first_name;type:varchar(255)"`
-	LastName    string         `json:"lastName" gorm:"column:last_name;type:varchar(255)"`
-	Email       string         `json:"email" gorm:"column:email;type:varchar(255);uniqueIndex;not null"`
-	Avatar      *string        `json:"avatar,omitempty" gorm:"column:avatar;type:varchar(255)"` // Made nullable
-	Password    string         `json:"-" gorm:"column:password;type:varchar(255);not null"`
-	Suggestions *[]Suggestion  `json:"suggestions" gorm:"foreignKey:UserId;references:Id"`
-	Comments    *[]Comment     `json:"comments" gorm:"foreignKey:UserId;references:Id"`
-	Replies     *[]Reply       `json:"replies" gorm:"foreignKey:UserId;references:Id"`
-	CreatedAt   DateTime       `json:"created_at" gorm:"column:created_at;type:DATETIME"`
-	UpdatedAt   DateTime       `json:"updated_at" gorm:"column:updated_at;type:DATETIME"`
-	DeletedAt   gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
+	Id        uint    `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
+	Username  string  `json:"username" gorm:"column:username;type:varchar(255);uniqueIndex;not null"`
+	FirstName string  `json:"firstName" gorm:"column:first_name;type:varchar(255)"`
+	LastName  string  `json:"lastName" gorm:"column:last_name;type:varchar(255)"`
+	Email     string  `json:"email" gorm:"column:email;type:varchar(255);uniqueIndex;not null"`
+	Avatar    *string `json:"avatar,omitempty" gorm:"column:avatar;type:varchar(255)"` // Made nullable
+	Password  string  `json:"-" gorm:"column:password;type:varchar(255);not null"`
+	// Suggestions *[]Suggestion  `json:"suggestions" gorm:"foreignKey:UserId;references:Id"`
+	// Comments    *[]Comment     `json:"comments" gorm:"foreignKey:UserId;references:Id"`
+	// Replies     *[]Reply       `json:"replies" gorm:"foreignKey:UserId;references:Id"`
+	CreatedAt DateTime       `json:"created_at" gorm:"column:created_at;type:DATETIME"`
+	UpdatedAt DateTime       `json:"updated_at" gorm:"column:updated_at;type:DATETIME"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
 }
 
 type Reply struct {
@@ -100,7 +97,7 @@ type Reply struct {
 type Category struct {
 	Id          uint           `json:"id" gorm:"column:id;type:INT(10) UNSIGNED NOT NULL AUTO_INCREMENT;primaryKey"`
 	Name        string         `json:"name" gorm:"column:name;type:varchar(255);not null"`
-	Description *string        `json:"description" gorm:"column:description;type:text"`
+	Description string         `json:"description" gorm:"column:description;type:text"`
 	CreatedAt   DateTime       `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   DateTime       `json:"updated_at" gorm:"column:updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
@@ -114,4 +111,18 @@ type Status struct {
 	CreatedAt   DateTime       `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt   DateTime       `json:"updated_at" gorm:"column:updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
+}
+
+
+type VoteType string
+
+
+
+type Vote struct {
+	Id           uint           `json:"id" gorm:"primaryKey;type:int(10) unsigned not null;auto_increment"`
+	UserId       uint           `json:"user_id" gorm:"type:int(10) unsigned not null;index"`
+	SuggestionId uint           `json:"suggestion_id" gorm:"type:int(10) unsigned not null;index"`
+    Type         VoteType       `json:"vote_type" gorm:"column:vote_type;type:ENUM('up','down')"`
+	CreatedAt    DateTime       `json:"created_at"`
+	DeletedAt    gorm.DeletedAt `json:"deleted_at,omitempty"`
 }
